@@ -1,7 +1,12 @@
 /**
  * 管理端外壳：顶栏 + 窄屏抽屉 + 页面出口（迁移自 v4 原型 admin.html 骨架）。
  *
- * 身份恢复失败（网络/503）时不展示任何管理内容，只给出可重试的提示；
+ * 主区域严格按会话状态渲染：
+ * - 仅 `authenticated` 渲染受保护页面；
+ * - `initializing`（含重试导致的重新确认）显示恢复中；
+ * - `restore-error` 显示可重试错误；
+ * - `unauthenticated`、`no-permission` 不渲染管理内容，由守卫跳转登录页/无权限页。
+ *
  * 恢复成功后由后端返回的身份信息驱动顶栏展示。
  */
 
@@ -72,7 +77,17 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 
 		<main class="page-main">
 			<div class="wrap">
-				<div v-if="auth.hasRestoreFailure" class="alert alert-warn" role="alert">
+				<!-- 只有确认过的管理员身份才渲染受保护页面；其余状态一律不渲染管理内容 -->
+				<router-view v-if="auth.isAuthenticated" />
+
+				<div v-else-if="auth.isInitializing" class="alert alert-info" role="status" aria-live="polite">
+					<span class="ic">⋯</span>
+					<span class="stack">
+						<span>正在确认管理员会话…</span>
+					</span>
+				</div>
+
+				<div v-else-if="auth.hasRestoreFailure" class="alert alert-warn" role="alert">
 					<span class="ic">⚠</span>
 					<span class="stack">
 						<span>会话恢复失败：{{ auth.restoreError }}</span>
@@ -82,7 +97,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 						</button>
 					</span>
 				</div>
-				<router-view v-else />
+				<!-- unauthenticated / no-permission：等待守卫跳转，此处不渲染任何内容 -->
 			</div>
 		</main>
 	</div>

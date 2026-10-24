@@ -4,8 +4,8 @@
  * 会话凭据保存在后端下发的 HttpOnly Cookie 中，本 store 只保存用于展示的身份，
  * 不读写任何令牌、不依赖浏览器持久化。
  *
- * 借鉴用户端已验收的会话版本保护：登录/退出成功后递增版本号，恢复请求若在此期间
- * 被新的登录/退出覆盖，其返回的过期结果会被丢弃。
+ * 借鉴用户端已验收的会话版本保护：登录/退出成功后递增版本号（`markSessionInvalid` 也递增），
+ * 恢复请求若在此期间被新的登录/退出覆盖，其返回的过期结果会被丢弃。
  */
 
 import { computed, ref } from 'vue';
@@ -41,6 +41,8 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 	async function doRestore(): Promise<void> {
 		status.value = 'initializing';
 		restoreError.value = null;
+		// 重新确认期间身份属于未知状态，清空展示数据避免残留上一份身份
+		admin.value = null;
 		const version = sessionVersion;
 		try {
 			const me = await adminMe();
@@ -70,6 +72,19 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 		return restorePromise;
 	}
 
+	/**
+	 * 会话失效：清理身份并递增会话版本。
+	 *
+	 * 退出成功、以及退出时确认会话已经无效（401）都必须走这里，
+	 * 让在此之前的恢复请求失效，避免旧结果写回身份。
+	 */
+	function markSessionInvalid(): void {
+		sessionVersion += 1;
+		admin.value = null;
+		status.value = 'unauthenticated';
+		restoreError.value = null;
+	}
+
 	async function login(input: AdminLoginInput): Promise<void> {
 		const me = await adminLogin(input);
 		sessionVersion += 1;
@@ -80,10 +95,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 
 	async function logout(): Promise<void> {
 		await adminLogout();
-		sessionVersion += 1;
-		admin.value = null;
-		status.value = 'unauthenticated';
-		restoreError.value = null;
+		markSessionInvalid();
 	}
 
 	/** 显示用角色文案。角色由后端返回，前端不推断默认角色。 */
@@ -103,5 +115,6 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 		restore,
 		login,
 		logout,
+		markSessionInvalid,
 	};
 });
