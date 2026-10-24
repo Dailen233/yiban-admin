@@ -71,7 +71,7 @@ npm run preview  # 预览已构建产物 → http://localhost:5175/
 管理员账号在本地开发库中用 `yiban-api` 的既有命令创建，密码只在本机输入、不进入代码、命令行参数与日志：
 
 ```bash
-cd ~/projects/yiban-api && uv run python -m scripts.create_admin
+cd ~/projects/yiban-api && .venv/bin/python -m scripts.create_admin
 ```
 
 管理端没有公开注册接口；普通账号即使登录成功也会在后端被拒为无管理权限。
