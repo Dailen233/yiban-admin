@@ -1,62 +1,119 @@
-import axios from 'axios';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { Session } from '/@/utils/storage';
+/**
+ * 管理端统一请求入口（对接 yiban-api）。
+ *
+ * - 所有请求携带 Cookie（`withCredentials`），管理员会话 `yiban_admin_session` 为 HttpOnly，
+ *   前端不读取、不落地任何令牌。
+ * - 写请求（非 GET）携带 `X-Yiban-Request: 1`；Origin 由浏览器随跨域请求自动发送。
+ * - 以 HTTP 状态码判断鉴权与错误类型，不把响应体中的业务 `code` 当作 HTTP 状态。
+ * - 204 无响应体，不做任何解析。
+ * - 5xx 使用安全通用提示，不展示后端调试异常原文；网络失败归为同一类可重试错误。
+ */
 
-// 配置新建一个 axios 实例
-const service = axios.create({
-	baseURL: import.meta.env.VITE_API_URL as any,
-	timeout: 50000,
+import axios, { AxiosError, AxiosInstance } from 'axios';
+
+const DEFAULT_API_BASE_URL = 'http://localhost:8001';
+
+export class ApiError extends Error {
+	/** HTTP 状态码；网络失败/无响应时为 0。 */
+	status: number;
+	/** 响应体中的业务 code（仅诊断用，不作鉴权依据）。 */
+	code?: number;
+	data?: unknown;
+
+	constructor(message: string, status: number, code?: number, data?: unknown) {
+		super(message);
+		this.name = 'ApiError';
+		this.status = status;
+		this.code = code;
+		this.data = data;
+	}
+}
+
+interface ErrorBody {
+	code?: number;
+	message?: string;
+	data?: unknown;
+}
+
+interface ApiRequestOptions {
+	method?: 'GET' | 'POST';
+	body?: unknown;
+}
+
+export const apiBaseUrl: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) || DEFAULT_API_BASE_URL;
+
+/**
+ * 底层 axios 实例。
+ * 模板遗留的示例请求模块（`src/api/class`、`src/api/college`、`src/api/students`）仍在直接复用它，
+ * 因此保留导出；它们不在管理端运行链路中，新的译伴请求一律走 `apiRequest`。
+ */
+const service: AxiosInstance = axios.create({
+	baseURL: `${apiBaseUrl.replace(/\/$/, '')}/api/v1`,
+	timeout: 20000,
 	headers: { 'Content-Type': 'application/json' },
+	withCredentials: true,
 });
 
-// 添加请求拦截器
-service.interceptors.request.use(
-	(config) => {
-		// 在发送请求之前做些什么 token
-		if (Session.get('token')) {
-			(<any>config.headers).common['token'] = `${Session.get('token')}`;
-		}
-		return config;
-	},
-	(error) => {
-		// 对请求错误做些什么
-		return Promise.reject(error);
+service.interceptors.request.use((config) => {
+	const method = (config.method || 'get').toLowerCase();
+	if (method !== 'get') {
+		(config.headers as Record<string, string>)['X-Yiban-Request'] = '1';
 	}
-);
+	return config;
+});
 
-// 添加响应拦截器
-service.interceptors.response.use(
-	(response) => {
-		// 对响应数据做点什么
-		const res = response.data;
-		if (res.code && res.code !== '2000') {
-			// `token` 过期或者账号已在别处登录
-			if (res.code === 401 || res.code === "4001") {
-				Session.clear(); // 清除浏览器全部临时缓存
-				window.location.href = '/'; // 去登录页
-				ElMessageBox.alert('你已被登出，请重新登录', '提示', {})
-					.then(() => {})
-					.catch(() => {});
-			}
-			return response.data;
-			// return Promise.reject(service.interceptors.response);
-		} else {
-			return response.data;
-		}
-	},
-	(error) => {
-		// 对响应错误做点什么
-		if (error.message.indexOf('timeout') != -1) {
-			ElMessage.error('网络超时');
-		} else if (error.message == 'Network Error') {
-			ElMessage.error('网络连接错误');
-		} else {
-			if (error.response.data) ElMessage.error(error.response.statusText);
-			else ElMessage.error('接口路径找不到');
-		}
-		return Promise.reject(error);
+function errorMessage(payload: ErrorBody | null, status: number): string {
+	if (status >= 500) return '服务暂时不可用，请稍后重试';
+	if (status === 422) return '提交的数据不合法，请检查后重试';
+	if (payload && typeof payload.message === 'string' && payload.message) return payload.message;
+	return '请求失败，请稍后重试';
+}
+
+/** 未认证（401）：会话缺失/失效，明确表示未登录。 */
+export function isUnauthorized(err: unknown): boolean {
+	return err instanceof ApiError && err.status === 401;
+}
+
+/** 已认证但非管理员（403）：停展示管理内容。 */
+export function isForbidden(err: unknown): boolean {
+	return err instanceof ApiError && err.status === 403;
+}
+
+/** 服务异常（网络失败或 5xx）：可重试，不能当作“未登录”。 */
+export function isServiceError(err: unknown): boolean {
+	return err instanceof ApiError && (err.status === 0 || err.status >= 500);
+}
+
+export function toApiError(err: unknown): ApiError {
+	if (err instanceof ApiError) return err;
+	if (err instanceof AxiosError) {
+		const status = err.response?.status ?? 0;
+		const payload = (err.response?.data ?? null) as ErrorBody | null;
+		// 跨域被拦截、后端未启动等情况没有 response，统一按可重试的网络错误处理
+		if (status === 0) return new ApiError('无法连接服务器，请检查网络后重试', 0);
+		return new ApiError(errorMessage(payload, status), status, payload?.code, payload?.data);
 	}
-);
+	return new ApiError('请求失败，请稍后重试', 0);
+}
 
-// 导出 axios 实例
+/**
+ * 发起管理端接口请求。
+ * @param path 以 `/` 开头的接口路径，会自动拼接 `/api/v1`
+ * @returns 成功返回响应体；非 2xx 抛 `ApiError`
+ */
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+	const { method = 'GET', body } = options;
+	try {
+		const response = await service.request<T>({
+			url: path,
+			method,
+			data: body,
+		});
+		if (response.status === 204) return undefined as T;
+		return response.data;
+	} catch (err) {
+		throw toApiError(err);
+	}
+}
+
 export default service;

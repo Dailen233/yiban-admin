@@ -2,21 +2,15 @@ import { createApp } from 'vue';
 import pinia from '/@/stores/index';
 import App from './App.vue';
 import router from './router';
-import { directive } from '/@/utils/directive';
-import { i18n } from '/@/i18n/index';
-import other from '/@/utils/other';
+import { NextLoading } from '/@/utils/loading';
 
-import ElementPlus from 'element-plus';
-import 'element-plus/dist/index.css';
-import '/@/theme/index.scss';
-import mitt from 'mitt';
-import VueGridLayout from 'vue-grid-layout';
+import '/@/theme/loading.scss';
+import '/@/styles/tokens.css';
+import '/@/styles/shared.css';
 
 const app = createApp(App);
 
-directive(app);
-other.elSvg(app);
+app.use(pinia).use(router).mount('#app');
 
-app.use(pinia).use(router).use(ElementPlus, { i18n: i18n.global.t }).use(i18n).use(VueGridLayout).mount('#app');
-
-app.config.globalProperties.mittBus = mitt();
+// 首次挂载后移除模板的全局 loading 遮罩
+NextLoading.done();

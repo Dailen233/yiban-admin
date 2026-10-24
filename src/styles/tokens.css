@@ -1,0 +1,80 @@
+/* ============================================================
+   译伴管理端 · 共享设计令牌
+   来源：中央原型 bilingual-ebook-generator/prototype/v4/pages.css
+   视觉主方向：现代东方阅读 —— 暖白纸色 · 墨蓝 · 玉石绿 · 少量暖金
+   这里是各管理页面的公共默认值；登录页与管理概览页的分面色值覆盖见对应样式文件。
+   ============================================================ */
+
+:root {
+	/* 暖白纸色 */
+	--paper: #f5f0e6;
+	--paper-2: #ece4d3;
+	--paper-3: #e4dac6;
+	--panel: #fffdf8;
+	--panel-2: #fbf7ee;
+
+	/* 墨蓝 */
+	--ink: #1e3a4f;
+	--ink-2: #2b4a63;
+	--ink-3: #35587a;
+	--ink-soft: #5c7488;
+	--ink-faint: #8b9cab;
+
+	/* 玉石绿 */
+	--jade: #2f5d4e;
+	--jade-2: #3d7360;
+	--jade-soft: #e3ede7;
+
+	/* 暖金（少量） */
+	--gold: #b08329;
+	--gold-2: #c79a45;
+	--gold-soft: #f2e6c8;
+	--gold-faint: #f7efdc;
+
+	/* 中性文本 */
+	--text: #2a2620;
+	--muted: #79715f;
+	--faint: #a79e8b;
+
+	/* 线 */
+	--line: #ddd2bb;
+	--line-2: #cabfa8;
+
+	/* 状态 */
+	--err: #9a3a2e;
+	--err-bg: #f7e7e3;
+	--warn: #8a6216;
+	--warn-bg: #f6ecd6;
+	--ok: #2f5d4e;
+	--ok-bg: #e5efe9;
+
+	--shadow-sm: 0 1px 2px rgba(42, 38, 32, 0.05), 0 2px 8px rgba(42, 38, 32, 0.06);
+	--shadow-md: 0 4px 14px rgba(42, 38, 32, 0.08), 0 2px 4px rgba(42, 38, 32, 0.05);
+	--shadow-lg: 0 12px 40px rgba(30, 58, 79, 0.14);
+
+	--radius: 14px;
+	--radius-sm: 9px;
+	--radius-xs: 6px;
+	--serif: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
+	--sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+
+	/* 字号阶梯 */
+	--fs-12: 12px;
+	--fs-13: 13px;
+	--fs-14: 14px;
+	--fs-15: 15px;
+	--fs-16: 16px;
+	--fs-20: 20px;
+	--fs-24: 24px;
+
+	/* 动效 */
+	--ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+	--t-fast: 0.15s;
+	--t-slow: 0.28s;
+	--focus-ring: 0 0 0 3px rgba(53, 88, 122, 0.18);
+
+	/* 阴影分层（更克制） */
+	--elev-1: 0 1px 2px rgba(42, 38, 32, 0.05);
+	--elev-2: 0 2px 6px rgba(42, 38, 32, 0.07), 0 1px 2px rgba(42, 38, 32, 0.05);
+	--elev-3: 0 10px 30px rgba(30, 58, 79, 0.12), 0 2px 6px rgba(42, 38, 32, 0.06);
+}
