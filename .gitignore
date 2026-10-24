@@ -21,3 +21,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# 本地浏览器验证产物（playwright-cli 快照、日志与截图）
+.playwright-cli
