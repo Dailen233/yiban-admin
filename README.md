@@ -37,7 +37,7 @@
 | `yiban-admin` | 管理端：管理员入口与运维查看 | [主仓库](https://gitee.com/jin-xinfu/yiban-admin) | [镜像](https://github.com/Dailen233/yiban-admin) |
 | `yiban-api` | 共享后端：账号、权限、文件、任务、翻译、成果与下载 | [主仓库](https://gitee.com/jin-xinfu/yiban-api) | [镜像](https://github.com/Dailen233/yiban-api) |
 
-当前 `yiban-web`、`yiban-api` 的远程空仓库已创建，起步代码尚未导入。Gitee 是开发与合并入口，GitHub 同步相同提交。校内 GitLab 留到最终提交阶段处理。
+四个仓库均已导入起步代码并按各自里程推进；`yiban-api` 的账号、角色与管理员鉴权接口已可用，本轮管理端账号能力即对接其上。Gitee 是开发与合并入口，GitHub 同步相同提交。校内 GitLab 留到最终提交阶段处理。
 
 ## 本地运行
 
@@ -51,7 +51,16 @@ npm run build
 
 2026-10-22 执行成功：安装 374 个包，构建转换 2110 个模块。该记录只证明模板可安装、可构建。
 
-2026-10-24 接入真实管理员会话后再次执行成功，构建模块数降至 124（不再打包 Element Plus 与模板示例页面）。除构建外还执行了真实后端 + Playwright 浏览器验收，覆盖登录、刷新恢复、受保护页拦截、退出与退出后拦截、401/403、网络与 503 恢复失败、退出失败反馈、双端会话互不影响，以及桌面与 390px 窄屏布局。验收记录见 PingCode 对应任务，未配置 CI 时不把未建立的检查设为门禁。
+2026-10-24 接入真实管理员会话后再次执行成功，构建模块数降至 124（不再打包 Element Plus 与模板示例页面）。
+
+本轮可用的检查：
+
+```bash
+npm run build      # 生产构建（只证明可构建，不等于完整类型检查；本仓未装 vue-tsc）
+npm run test:auth  # 管理员会话回归：Node 侧驱动 store/composable，接口为可控替身
+```
+
+除构建与回归外还执行了真实后端 + Playwright 浏览器验收，覆盖登录、刷新恢复、受保护页拦截、退出与退出后拦截、401/403、恢复失败、退出失败反馈、双端会话互不影响，以及桌面与 390px 窄屏布局。涉及 HTTP 状态的分支（401/403/503、网络中断）通过请求拦截验证，与真实后端验证分开记录。验收记录见 PingCode 对应任务，未配置 CI 时不把未建立的检查设为门禁。
 
 开发服务器固定占用 **`http://localhost:5175`**（`strictPort`，端口冲突直接报错而非顺延），避免误占用户端 `5174` 与其他项目的 `5173`：
 
@@ -68,13 +77,14 @@ npm run preview  # 预览已构建产物 → http://localhost:5175/
 
 所有请求携带 Cookie（`withCredentials`），写请求额外携带 `X-Yiban-Request: 1`，并以 HTTP 状态码判断成败：401 未认证、403 无管理员权限、204 不解析响应体。`VITE_*` 是浏览器侧可见配置，不能保存翻译服务密钥、会话签名密钥等服务端秘密。
 
-管理员账号在本地开发库中用 `yiban-api` 的既有命令创建，密码只在本机输入、不进入代码、命令行参数与日志：
+管理员账号在本地开发库中用 `yiban-api` 的既有命令创建（需显式加载开发配置，确保指向 `yiban_api_dev` 而非其他库），密码只在本机输入、不进入代码、命令行参数与日志：
 
 ```bash
-cd ~/projects/yiban-api && .venv/bin/python -m scripts.create_admin
+cd ~/projects/yiban-api
+uv run --env-file .env.dev-api --locked python -m scripts.create_admin
 ```
 
-管理端没有公开注册接口；普通账号即使登录成功也会在后端被拒为无管理权限。
+该脚本交互读取邮箱、显示名并用 `getpass` 隐藏密码；邮箱已存在时不重复创建，也不会写入教师示例库。管理端没有公开注册接口；普通账号即使登录成功也会在后端被拒为无管理权限。
 
 ## 代码结构
 
@@ -90,6 +100,7 @@ cd ~/projects/yiban-api && .venv/bin/python -m scripts.create_admin
 | `src/styles/` | 设计令牌、共享样式与登录/概览分页色值覆盖（迁移自 v4） |
 | `src/assets/fonts/` | 品牌字体「霞鹜文楷」及 OFL 许可（按原型实际引用迁入） |
 | `src/router/guard.ts`、`src/router/index.ts` | 界面引导守卫与路由表 |
+| `scripts/admin-auth-regression/` | 管理员会话回归用例：在 Node 侧驱动 store/composable，接口替换为可控替身 |
 | `docs/` | 来源、原始说明及开发记录 |
 
 目录中仍保留教师模板原有示例文件（如 `src/views/student/`、旧 `src/layout/navBars/`），它们不在当前运行链路中，后续按需处理。
