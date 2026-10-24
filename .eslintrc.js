@@ -40,6 +40,8 @@ module.exports = {
 		'vue/no-v-model-argument': 'off',
 		'vue/no-arrow-functions-in-watch': 'off',
 		'vue/no-template-key': 'off',
+		// Vue 3 允许把 key 放在 <template v-for> 上，与上面的处理保持一致
+		'vue/no-v-for-template-key': 'off',
 		'vue/no-v-html': 'off',
 		'vue/comment-directive': 'off',
 		'vue/no-parsing-error': 'off',

@@ -25,15 +25,14 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
 		server: {
 			host: '0.0.0.0',
 			port: env.VITE_PORT as unknown as number,
+			// 管理端端口固定，被占用时直接报错而不是自动顺延，避免误占用户端端口
+			strictPort: true,
 			open: env.VITE_OPEN,
-			proxy: {
-				'/api': {
-					target: 'http://api.experiment.ncepu.edu.cn/api_1',
-					ws: true,
-					changeOrigin: true,
-					rewrite: (path) => path.replace(/^\/api/, ''),
-				},
+			// 缩小监听范围，避免本机同时运行多个项目时耗尽文件监视资源
+			watch: {
+				ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**'],
 			},
+			// 译伴接口按 VITE_API_BASE_URL 直连后端；不再配置教师教学接口的转发代理
 		},
 		build: {
 			outDir: 'dist',

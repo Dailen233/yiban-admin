@@ -1,0 +1,147 @@
+/* v4 管理端登录页视觉
+   来源：中央原型 bilingual-ebook-generator/prototype/v4/admin-login.css
+   沿用「译伴」品牌字体（霞鹜文楷）与墨蓝 / 暖纸配色，呈现专业管理入口。
+   迁移处理：
+   - @font-face 已随原型实际引用统一放入 styles/shared.css；
+   - `:root` 改为 `body .admin-login-page`，避免与概览页的分面色值互相覆盖；
+   - 删除原型「仅供原型演示」横幅相关样式（本批已改为真实登录）。 */
+
+body .admin-login-page {
+	--paper: #f7f4ec;
+	--panel: #fffdf8;
+	--panel-2: #fbf7ee;
+	--ink: #16303f;
+	--ink-2: #2c4c63;
+	--ink-3: #35587a;
+	--jade: #1f5b4a;
+	--gold: #a87c2e;
+	--gold-2: #c9a04a;
+	--gold-soft: #f2e6c8;
+	--gold-faint: #f7efdc;
+	--muted: #5f6b70;
+	--faint: #8b959a;
+	--line: #dcd7ca;
+	--line-2: #c5bfb0;
+	--warn: #8a6d1f;
+	--warn-bg: #fbf3dc;
+}
+
+/* 顶栏品牌「译伴」用霞鹜文楷 */
+.admin-login-page .admin-brand b .wm {
+	font-family: 'LXGW Mark', var(--serif);
+	font-weight: 400;
+	letter-spacing: 0.08em;
+}
+
+/* 整页：暖纸底 + 顶部墨蓝微光，表单垂直居中 */
+.admin-login-page .auth {
+	min-height: calc(100vh - 60px);
+	display: grid;
+	grid-template-columns: 1fr;
+	align-items: center;
+	padding: 40px 20px;
+	background: radial-gradient(760px 300px at 50% -6%, rgba(22, 48, 63, 0.08), transparent 62%), var(--paper);
+}
+.admin-login-page .auth .form-side {
+	display: block;
+	padding: 0;
+}
+.admin-login-page .auth .form-card {
+	max-width: 460px;
+	margin: 0 auto;
+	width: 100%;
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 24px 60px rgba(16, 34, 46, 0.1);
+	padding: 40px 42px 32px;
+	position: relative;
+	overflow: hidden;
+}
+.admin-login-page .auth .form-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: linear-gradient(90deg, var(--ink) 0%, var(--ink-3) 62%, var(--gold-2) 100%);
+}
+
+/* 身份区：管印 + 管理员登录 */
+.admin-login-page .admin-identity {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+.admin-login-page .admin-identity .seal {
+	width: 52px;
+	height: 52px;
+	border-radius: 12px;
+	flex-shrink: 0;
+	position: relative;
+	background: linear-gradient(150deg, var(--ink) 0%, var(--ink-3) 100%);
+	color: var(--gold-2);
+	display: grid;
+	place-items: center;
+	font-family: var(--serif);
+	font-weight: 700;
+	font-size: 26px;
+	box-shadow: 0 8px 20px rgba(16, 34, 46, 0.22);
+}
+.admin-login-page .admin-identity .seal::after {
+	content: '';
+	position: absolute;
+	inset: 4px;
+	border: 1px solid rgba(201, 160, 74, 0.5);
+	border-radius: 9px;
+}
+.admin-login-page .admin-identity h1 {
+	font-family: var(--serif);
+	font-weight: 700;
+	font-size: 1.72rem;
+	color: var(--ink);
+	margin: 0;
+	letter-spacing: 0.02em;
+}
+.admin-login-page .admin-identity p {
+	margin: 4px 0 0;
+	font-size: 13px;
+	color: var(--muted);
+	letter-spacing: 0.02em;
+}
+
+/* 表单 */
+.admin-login-page .input:focus {
+	border-color: var(--gold-2);
+	box-shadow: 0 0 0 3px rgba(201, 160, 74, 0.16);
+}
+.admin-login-page .form-card form {
+	margin-bottom: 0;
+}
+.admin-login-page .form-card .foot {
+	text-align: center;
+	margin-top: 20px;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+/* 手机 */
+@media (max-width: 560px) {
+	.admin-login-page .auth {
+		padding: 24px 16px 40px;
+		align-items: start;
+	}
+	.admin-login-page .auth .form-card {
+		padding: 30px 22px 26px;
+	}
+	.admin-login-page .admin-identity h1 {
+		font-size: 1.5rem;
+	}
+	.admin-login-page .admin-identity .seal {
+		width: 46px;
+		height: 46px;
+		font-size: 23px;
+	}
+}

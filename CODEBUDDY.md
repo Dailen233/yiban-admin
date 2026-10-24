@@ -1,6 +1,6 @@
 # CODEBUDDY.md — 译伴管理端协作约定
 
-更新日期：2026-10-22。本文件约束 `yiban-admin`，与根目录 README 及本轮用户指令共同使用。
+更新日期：2026-10-24。本文件约束 `yiban-admin`，与根目录 README 及本轮用户指令共同使用。
 
 ## 开工与技能使用
 
@@ -29,9 +29,21 @@
 
 老师课堂要求、用户产品决定和实现状态分别记录。课堂要求使用起步项目首次提交、`master/develop` 分支与合理工程分层；本项目具体采用上述四仓分工。当前使用 Gitee 主仓库与 GitHub 镜像，校内 GitLab 留到最终提交阶段。
 
+## 已实现能力（feature/admin-account）
+
+- 真实管理员登录、身份恢复、路由保护与退出；界面迁移自 v4 原型 `admin-login.html/css` 与 `admin.html/css`。
+- 会话凭据来自服务端 HttpOnly Cookie `yiban_admin_session`，前端不读写令牌，`localStorage`/`sessionStorage` 不含身份数据。
+- 已解除教师模板在活动链路里的教学登录、`token` 头/返回码、学生 CRUD、固定验证码、手机/扫码登录、教师用户信息与菜单取数，以及指向 `api.experiment.ncepu.edu.cn` 的配置与代理。
+- 身份写回统一由 store 负责：登录、退出成功、退出确认会话失效（401）都递增会话版本，过期 me 结果不得覆盖新身份；主区域严格按会话状态渲染，只有 `authenticated` 才渲染受保护页面。
+- 可通过 `npm run test:auth` 复跑会话回归（Node 侧驱动 store/composable，接口为可控替身），覆盖版本保护与并发去重。
+- 任务数量、举报、审核、运行统计与操作日志无真实接口，界面保留骨架并标记「尚未接入」，不展示编造数据。
+- 仍保留的教师示例文件（旧 `src/layout/`、`src/views/student/` 等）不在运行链路中，按需另行处理。
+
 ## 当前阶段与范围
 
-当前为工程初始化与设计衔接，教师模板基线是 `9e633cdc571232d8475894ae4531b1e9d98b44b9`。本批仅补仓库说明、模板来源和开发约束，未改业务源码、配置、依赖或中央需求文档。
+> 历史记录：教师模板基线为 `9e633cdc571232d8475894ae4531b1e9d98b44b9`，那一批处于工程初始化与设计衔接阶段，只补仓库说明、模板来源和开发约束，未改业务源码、配置、依赖或中央需求文档。自此之后不再适用。
+
+`feature/admin-account` 已完成管理员账号能力并改动了业务源码、请求封装、路由与环境配置，当前阶段为「首个真实里程碑的管理端接入」：管理员独立登录、身份恢复、路由保护与退出已对接真实后端；任务与失败信息的只读查看待下一批接入真实接口。
 
 后续业务按用户明确的批次推进，不把旧需求阶段的“不写业务代码”当成永久禁令。教师 README 与 LICENSE 保留，模板能力与译伴真实实现分别描述。
 
@@ -41,12 +53,14 @@
 
 ## 实现与权限边界
 
-- 沿用 Vue 3、TypeScript、Vite、Element Plus、Pinia 的现有基础。初始化使用 npm 和 `package-lock.json`，本批保留依赖版本与所有原有锁文件。
+- 沿用 Vue 3、TypeScript、Vite、Element Plus、Pinia 的现有基础；使用 npm 与仓库内 `package-lock.json`，不为单一需求整体升级 Vue、Vite 或 TypeScript。
 - 页面放在 `src/views/`，请求与类型放在 `src/api/`，共享请求处理放在 `src/utils/request.ts`。复用公共组件，避免逐页复制请求与鉴权代码。
 - 模板的学生 CRUD、默认角色、Token 字段和返回码属于教学示例，不直接成为译伴的权限与接口契约。
 - 路由和菜单只提供界面引导。管理接口必须由后端校验管理员身份，不能通过前端角色判断代替真实权限。
 - 只读查看任务与失败元数据不等于读取私有原文、译文或下载文件；文件内容访问另按审核上下文与留痕规则设计。
-- 当前配置仍指向教学 API，联调前统一切换到译伴 API 或明确的模拟环境，核对环境变量、请求封装和代理。不要使用教师数据写入接口进行译伴验收。
+- 管理端固定开发端口 `5175`（`strictPort`），不得占用用户端 `5174` 与其他项目的 `5173`；本机文件监视资源不足导致 dev 退出时，用 `npm run build && npm run preview` 保持同一端口可用。
+- 活动请求链只调用 `VITE_API_BASE_URL`（默认 `http://localhost:8001`）下的 `/api/v1/admin/auth/*`；统一携带凭据与写请求头 `X-Yiban-Request: 1`，以 HTTP 状态判断成败，204 不解析响应体。
+- 退出只清理管理端会话，不调用用户端 logout、不清理用户端会话；不得暂停或占用用户端与其他项目的服务。
 - `VITE_*` 可进入浏览器产物，不能保存翻译服务密钥、会话签名密钥等服务端秘密。用户会话的存储方式由鉴权设计确定。
 
 ## 任务与成果口径
@@ -70,7 +84,11 @@
 
 ## 验证与报告
 
-模板基线验证命令为 `npm ci --ignore-scripts --no-audit --no-fund` 和 `npm run build`。当前 `package.json` 没有 `lint`、`test` 脚本。
+模板基线验证命令为 `npm ci --ignore-scripts --no-audit --no-fund` 和 `npm run build`。
+
+当前可用检查：`npm run build`（生产构建）、`npm run test:auth`（管理员会话回归）、`npx eslint --ext .ts,.vue <文件>`（本仓未配置 `lint` 脚本，也没有安装 `vue-tsc`）。`src/config/adminNav.ts` 被既有 `.eslintignore` 规则覆盖，检查该文件需显式加 `--no-ignore`。
+
+build 成功不等于完整类型检查、浏览器验收或真实权限验证，报告中不得混为一谈。涉及会话状态、版本保护、去重的改动必须跑 `npm run test:auth`，路由守卫的串行等待不能代替这些回归。
 
 仅改 Markdown 时检查补丁、链接、来源与文字一致性即可，不反复安装或构建。业务、配置改动运行对应构建、检查和必要验收；build 成功不等于完整类型检查、浏览器验收或真实权限验证。
 
